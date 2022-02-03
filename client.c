@@ -14,21 +14,24 @@
 
 paddle_position_t paddle;
 message m;
-int key;
+int key, count;
 WINDOW * my_win;
 int flag=0, sock_fd;
 pthread_mutex_t draw_mutex;
 struct sockaddr_in server_addr;
 
 void * moveBall(void * arg){
+    count = 0;
     while(key != 113 && key != 114 && m.type==4){
         sleep(1);
         pthread_mutex_lock(&draw_mutex);
         draw_ball(my_win, &m.ball, false);
         moove_ball(&m.ball, paddle);
-        draw_ball(my_win, &m.ball, true);
-            if(m.type == 4)
-        Send_Reply(sock_fd, &m, &server_addr);
+        
+        if(m.type == 4 && count < 9){
+            draw_ball(my_win, &m.ball, true);
+            Send_Reply(sock_fd, &m, &server_addr);
+        }
         pthread_mutex_unlock(&draw_mutex);
     }
     return;
@@ -86,12 +89,15 @@ int main(int argc, char** argv){
         Receive_message(sock_fd, &m, &server_addr);
         switch (m.type){
             case 2:
+                pthread_mutex_lock(&draw_mutex);
                 draw_paddle(my_win, &paddle, false);
                 m.type=4;
+                pthread_mutex_unlock(&draw_mutex);
                 break;
             case 3:
                 pthread_create(&message_thread, NULL, recvMessage, NULL);
                 pthread_mutex_lock(&draw_mutex);
+                draw_ball(my_win, &old_ball, false);
                 draw_ball(my_win, &m.ball, true);
                 draw_paddle(my_win, &paddle, true);
                 pthread_mutex_unlock(&draw_mutex);
@@ -113,13 +119,12 @@ int main(int argc, char** argv){
                         }
                         mvwprintw(message_win, 1,1,"%c key pressed", key);
                         mvwprintw(message_win, 2,1,"flag %d", flag);
-                        wrefresh(message_win);
-                        pthread_mutex_unlock(&draw_mutex);
+                        wrefresh(message_win); 
                         Send_Reply(sock_fd, &m, &server_addr);
                         flag=0;
+                        pthread_mutex_unlock(&draw_mutex);
                     }
                 }
-                old_ball=m.ball;
                 /* Check which key was pressed to stop playing*/
                 if (key == 113){
 
@@ -136,7 +141,10 @@ int main(int argc, char** argv){
                     Send_Reply(sock_fd, &m, &server_addr); /* Send "release ball" message*/
                     mvwprintw(message_win, 1,1,"%c key pressed", key);
                 }
+                pthread_mutex_lock(&draw_mutex);
                 draw_paddle(my_win, &paddle, false);
+                old_ball=m.ball;
+                pthread_mutex_unlock(&draw_mutex);
                 pthread_join(message_thread, NULL);
                 pthread_join(ball_move_thread, NULL);
                 break;
@@ -144,13 +152,17 @@ int main(int argc, char** argv){
             case 4:
                 /* Update the ball position on the screen (without paddle)*/
                 //update_ball_on_screen(my_win, &m.ball, paddle);
+                pthread_mutex_lock(&draw_mutex);
                 draw_ball(my_win, &old_ball, false);
                 draw_ball(my_win, &m.ball, true);
                 old_ball=m.ball;
+                pthread_mutex_unlock(&draw_mutex);
                 break;
             case 6:
+                pthread_mutex_lock(&draw_mutex);
                 draw_ball(my_win, &m.ball, true);
                 old_ball=m.ball;
+                pthread_mutex_unlock(&draw_mutex);
                 break;
             default:
                 perror("invalid message type");

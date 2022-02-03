@@ -43,9 +43,13 @@ void * updateBallThread(void * arg){
                     i++;
             }
             Curr_Player=i;
-            
             Send_Reply(sock_fd, &m, &Players[Curr_Player]);
             printf("changed current player to %d\n",Curr_Player);
+            for (int p = 0; p < Num_players; p++){
+                m.type = 4;
+                if (p != i)
+                    Send_Reply(sock_fd, &m, &Players[p]);
+            }
         }
         if (pthread_mutex_unlock(&send_message_mutex) != 0){
             perror("unlock");

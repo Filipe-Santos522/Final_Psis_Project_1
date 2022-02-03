@@ -5,6 +5,8 @@ FLAGS = -Wall -g
 
 HOST_CC_FLAGS =  -lncurses -lpthread
 
+all: server client
+
 server: server.o single-pong.o Serverfunc.o
 	$(HOST_CC) $(FLAGS) server.o single-pong.o Serverfunc.o -o server $(HOST_CC_FLAGS)
 
@@ -26,4 +28,4 @@ Serverfunc.o: Serverfunc.c single-pong.h Serverfunc.h sock_dg_inet.h
 	$(HOST_CC) $(FLAGS) -c Serverfunc.c -o Serverfunc.o  $(HOST_CC_FLAGS)
 
 clean:
-	rm -f *.o *~ server_host client
+	rm -f *.o *~ server client
