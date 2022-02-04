@@ -44,10 +44,8 @@ void draw_paddle(WINDOW *win, paddle_position_t * paddle, int delete){
 
 
 void moove_paddle (paddle_position_t * paddle, int direction, ball_position_t *ball){
-    int paddle_aux;
 
     if (direction == KEY_UP){
-        paddle_aux=paddle->y-1;
 
         if (paddle->y  != 1 ){
             if (ball->y == paddle->y - 1 && ball->y != 1 && (ball->x - paddle->x < 3 && ball->x - paddle->x > -3)){
@@ -62,7 +60,6 @@ void moove_paddle (paddle_position_t * paddle, int direction, ball_position_t *b
 
 
     if (direction == KEY_DOWN){
-        paddle_aux=paddle->y+1;
 
         if (paddle->y  != WINDOW_SIZE - 2){
             if (ball->y == paddle->y + 1 && ball->y != WINDOW_SIZE - 2 && (ball->x - paddle->x < 3 && ball->x - paddle->x > -3)){
@@ -77,7 +74,6 @@ void moove_paddle (paddle_position_t * paddle, int direction, ball_position_t *b
     }
     
     if (direction == KEY_LEFT){
-        paddle_aux=paddle->x-1;
 
         if (paddle->x  != 3){
             if (ball->y == paddle->y && ball->x != 1 &&  ball->x - paddle->x == -3){
@@ -92,7 +88,6 @@ void moove_paddle (paddle_position_t * paddle, int direction, ball_position_t *b
     }
     
     if (direction == KEY_RIGHT){
-        paddle_aux=paddle->x+1;
             
         if (paddle->x  != WINDOW_SIZE-4){
             if (ball->y == paddle->y && ball->x != WINDOW_SIZE-2 && ball->x - paddle->x == 3){

@@ -16,36 +16,43 @@ paddle_position_t paddle;
 message m;
 int key, count;
 WINDOW * my_win;
+ball_position_t old_ball;
 int flag=0, sock_fd;
 pthread_mutex_t draw_mutex;
+pthread_mutex_t key_lock;
+pthread_cond_t cond;
 struct sockaddr_in server_addr;
 
 void * moveBall(void * arg){
-    count = 0;
     while(key != 113 && key != 114 && m.type==4){
-        sleep(1);
         pthread_mutex_lock(&draw_mutex);
+        if(m.type==4){
         draw_ball(my_win, &m.ball, false);
         moove_ball(&m.ball, paddle);
-        
-        if(m.type == 4 && count < 9){
-            draw_ball(my_win, &m.ball, true);
-            Send_Reply(sock_fd, &m, &server_addr);
+        draw_ball(my_win, &m.ball, true);
+        old_ball=m.ball;
+        Send_Reply(sock_fd, &m, &server_addr);
         }
         pthread_mutex_unlock(&draw_mutex);
+        sleep(1);
     }
-    return;
+    return NULL;
 }
 
 void * getKey(void * arg){
     while(1){
+        pthread_mutex_lock(&key_lock);
+        pthread_cond_wait(&cond, &key_lock);
+        pthread_mutex_unlock(&key_lock);
         key = wgetch(my_win);
         flag=1;
     }
+    return NULL;
 }
 
 void * recvMessage(void * arg){
     Receive_message(sock_fd, &m, &server_addr);
+    return NULL;
 }
 
 int main(int argc, char** argv){
@@ -59,7 +66,6 @@ int main(int argc, char** argv){
     inet_pton(AF_INET, argv[1], &server_addr.sin_addr);
 
     sock_fd=Socket_creation();
-    ball_position_t old_ball;
     m.type = 1; /* Set message type to "connect"*/
     Send_Reply(sock_fd, &m, &server_addr); /* Send connect message */
 
@@ -103,25 +109,34 @@ int main(int argc, char** argv){
                 pthread_mutex_unlock(&draw_mutex);
                 key = -1;
                 pthread_create(&ball_move_thread, NULL, moveBall, NULL);
+                pthread_mutex_lock(&key_lock);
+                pthread_cond_signal(&cond);
+                pthread_mutex_unlock(&key_lock);
                 m.type = 4;
                 while(key != 113 && key != 114 && m.type==4){
                     pthread_mutex_lock(&draw_mutex);
                     wrefresh(my_win);
                     pthread_mutex_unlock(&draw_mutex);
+                    
                     if(flag==1){
                         pthread_mutex_lock(&draw_mutex);
                         //make_play(key, my_win, &paddle, &m.ball); 
                         if (key == KEY_LEFT || key == KEY_RIGHT || key == KEY_UP || key == KEY_DOWN){
                             draw_paddle(my_win, &paddle, false);
+                            draw_ball(my_win, &old_ball, false);
                             moove_paddle (&paddle, key, &m.ball);
                             draw_paddle(my_win, &paddle, true);
-                            //draw_ball(my_win, &m.ball, true);
+                            draw_ball(my_win, &m.ball, true);
+                            old_ball=m.ball;
                         }
                         mvwprintw(message_win, 1,1,"%c key pressed", key);
                         mvwprintw(message_win, 2,1,"flag %d", flag);
                         wrefresh(message_win); 
                         Send_Reply(sock_fd, &m, &server_addr);
                         flag=0;
+                        pthread_mutex_lock(&key_lock);
+                        pthread_cond_signal(&cond);
+                        pthread_mutex_unlock(&key_lock);
                         pthread_mutex_unlock(&draw_mutex);
                     }
                 }
@@ -143,7 +158,6 @@ int main(int argc, char** argv){
                 }
                 pthread_mutex_lock(&draw_mutex);
                 draw_paddle(my_win, &paddle, false);
-                old_ball=m.ball;
                 pthread_mutex_unlock(&draw_mutex);
                 pthread_join(message_thread, NULL);
                 pthread_join(ball_move_thread, NULL);
