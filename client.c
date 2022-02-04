@@ -1,3 +1,7 @@
+/*PSis Project 2 - 21/22
+ * Filipe Santos - 90068
+ * Alexandre Fonseca - 90210
+ */
 #include <ncurses.h>
 #include <sys/types.h>
 #include <sys/socket.h> 
@@ -23,6 +27,8 @@ pthread_mutex_t key_lock;
 pthread_cond_t cond;
 struct sockaddr_in server_addr;
 
+
+// Thread function that moves the ball every second
 void * moveBall(void * arg){
     while(key != 113 && key != 114 && m.type==4){
         pthread_mutex_lock(&draw_mutex);
@@ -39,10 +45,11 @@ void * moveBall(void * arg){
     return NULL;
 }
 
+// Thread function that reads a key from the keyboard
 void * getKey(void * arg){
     while(1){
-        pthread_mutex_lock(&key_lock);
-        pthread_cond_wait(&cond, &key_lock);
+        pthread_mutex_lock(&key_lock); 
+        pthread_cond_wait(&cond, &key_lock); //Condition variable that waits for the previous key press to be processed
         pthread_mutex_unlock(&key_lock);
         key = wgetch(my_win);
         flag=1;
@@ -50,6 +57,7 @@ void * getKey(void * arg){
     return NULL;
 }
 
+// Thread function to receive a message from the server
 void * recvMessage(void * arg){
     Receive_message(sock_fd, &m, &server_addr);
     return NULL;
@@ -95,22 +103,24 @@ int main(int argc, char** argv){
         Receive_message(sock_fd, &m, &server_addr);
         switch (m.type){
             case 2:
+                //Release ball - erase paddle form the screen safely
                 pthread_mutex_lock(&draw_mutex);
                 draw_paddle(my_win, &paddle, false);
                 m.type=4;
                 pthread_mutex_unlock(&draw_mutex);
                 break;
             case 3:
-                pthread_create(&message_thread, NULL, recvMessage, NULL);
+                //Playing state
+                pthread_create(&message_thread, NULL, recvMessage, NULL); //Create thread to receive release ball message
                 pthread_mutex_lock(&draw_mutex);
                 draw_ball(my_win, &old_ball, false);
-                draw_ball(my_win, &m.ball, true);
-                draw_paddle(my_win, &paddle, true);
+                draw_ball(my_win, &m.ball, true); //Update ball
+                draw_paddle(my_win, &paddle, true); //Draw paddle
                 pthread_mutex_unlock(&draw_mutex);
                 key = -1;
-                pthread_create(&ball_move_thread, NULL, moveBall, NULL);
+                pthread_create(&ball_move_thread, NULL, moveBall, NULL); //Create thread to move the ball
                 pthread_mutex_lock(&key_lock);
-                pthread_cond_signal(&cond);
+                pthread_cond_signal(&cond); //Signal the getKey thread
                 pthread_mutex_unlock(&key_lock);
                 m.type = 4;
                 while(key != 113 && key != 114 && m.type==4){
@@ -118,9 +128,8 @@ int main(int argc, char** argv){
                     wrefresh(my_win);
                     pthread_mutex_unlock(&draw_mutex);
                     
-                    if(flag==1){
+                    if(flag==1){ //If a key was pressed, update the board and send a message to the server
                         pthread_mutex_lock(&draw_mutex);
-                        //make_play(key, my_win, &paddle, &m.ball); 
                         if (key == KEY_LEFT || key == KEY_RIGHT || key == KEY_UP || key == KEY_DOWN){
                             draw_paddle(my_win, &paddle, false);
                             draw_ball(my_win, &old_ball, false);
@@ -130,7 +139,6 @@ int main(int argc, char** argv){
                             old_ball=m.ball;
                         }
                         mvwprintw(message_win, 1,1,"%c key pressed", key);
-                        mvwprintw(message_win, 2,1,"flag %d", flag);
                         wrefresh(message_win); 
                         Send_Reply(sock_fd, &m, &server_addr);
                         flag=0;
@@ -157,7 +165,7 @@ int main(int argc, char** argv){
                     mvwprintw(message_win, 1,1,"%c key pressed", key);
                 }
                 pthread_mutex_lock(&draw_mutex);
-                draw_paddle(my_win, &paddle, false);
+                draw_paddle(my_win, &paddle, false); //Erase paddle when quitting play state
                 pthread_mutex_unlock(&draw_mutex);
                 pthread_join(message_thread, NULL);
                 pthread_join(ball_move_thread, NULL);
@@ -165,7 +173,6 @@ int main(int argc, char** argv){
             
             case 4:
                 /* Update the ball position on the screen (without paddle)*/
-                //update_ball_on_screen(my_win, &m.ball, paddle);
                 pthread_mutex_lock(&draw_mutex);
                 draw_ball(my_win, &old_ball, false);
                 draw_ball(my_win, &m.ball, true);

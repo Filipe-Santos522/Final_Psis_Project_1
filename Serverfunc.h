@@ -1,3 +1,7 @@
+/*PSis Project 2 - 21/22
+ * Filipe Santos - 90068
+ * Alexandre Fonseca - 90210
+ */
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/un.h>

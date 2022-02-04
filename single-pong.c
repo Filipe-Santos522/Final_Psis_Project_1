@@ -1,31 +1,21 @@
+/*PSis Project 2 - 21/22
+ * Filipe Santos - 90068
+ * Alexandre Fonseca - 90210
+ */
 #include <stdlib.h>
 #include <ncurses.h>
-
-
 #include "pong.h"
 #include "single-pong.h"
 
-/*WINDOW * message_win;*/
 
-
-/*typedef struct ball_position_t{
-    int x, y;
-    int up_hor_down; //  -1 up, 0 horizontal, 1 down
-    int left_ver_right; //  -1 left, 0 vertical,1 right
-    char c;
-} ball_position_t;*/
-
-/*typedef struct paddle_position_t{
-    int x, y;
-    int length;
-} paddle_position_t;*/
-
+//Function to create a new paddle
 void new_paddle (paddle_position_t * paddle, int legth){
     paddle->x = WINDOW_SIZE/2;
     paddle->y = WINDOW_SIZE-2;
     paddle->length = legth;
 }
 
+//Function to draw a paddle
 void draw_paddle(WINDOW *win, paddle_position_t * paddle, int delete){
     int ch;
     if(delete){
@@ -42,9 +32,10 @@ void draw_paddle(WINDOW *win, paddle_position_t * paddle, int delete){
     wrefresh(win);
 }
 
-
+//Move the paddle with collision handling agains the ball
 void moove_paddle (paddle_position_t * paddle, int direction, ball_position_t *ball){
 
+    //Collision logic
     if (direction == KEY_UP){
 
         if (paddle->y  != 1 ){
@@ -58,7 +49,7 @@ void moove_paddle (paddle_position_t * paddle, int direction, ball_position_t *b
         }
     }
 
-
+    //Collision logic
     if (direction == KEY_DOWN){
 
         if (paddle->y  != WINDOW_SIZE - 2){
@@ -73,6 +64,7 @@ void moove_paddle (paddle_position_t * paddle, int direction, ball_position_t *b
         
     }
     
+    //Collision logic
     if (direction == KEY_LEFT){
 
         if (paddle->x  != 3){
@@ -87,6 +79,7 @@ void moove_paddle (paddle_position_t * paddle, int direction, ball_position_t *b
         
     }
     
+    //Collision logic
     if (direction == KEY_RIGHT){
             
         if (paddle->x  != WINDOW_SIZE-4){
@@ -101,6 +94,7 @@ void moove_paddle (paddle_position_t * paddle, int direction, ball_position_t *b
     }
 }
 
+//Place ball in a random position
 void place_ball_random(ball_position_t * ball){
     ball->x = rand() % WINDOW_SIZE ;
     ball->y = rand() % WINDOW_SIZE ;
@@ -109,6 +103,7 @@ void place_ball_random(ball_position_t * ball){
     ball->left_ver_right = rand() % 3 -1 ; // 0 vertical, -1 left, 1 right
 }
 
+//Function to move the ball with collision handling
 void moove_ball(ball_position_t * ball, paddle_position_t paddle){
     
     int next_x = ball->x + ball->left_ver_right;
@@ -117,6 +112,7 @@ void moove_ball(ball_position_t * ball, paddle_position_t paddle){
     int flag=0;
     int flag2=0;
     
+    //Collision logic
     if ((paddle.x + 2 >= next_x && paddle.x - 2 <= next_x) && paddle.y == next_y){
         if(ball->up_hor_down==0){
             flag2=1;
@@ -152,7 +148,7 @@ void moove_ball(ball_position_t * ball, paddle_position_t paddle){
     }
 }
 
-
+//Function to draw/erase the ball and refresh the screen
 void draw_ball(WINDOW *win, ball_position_t * ball, int draw){
     int ch;
     if(draw){
@@ -165,11 +161,3 @@ void draw_ball(WINDOW *win, ball_position_t * ball, int draw){
     wrefresh(win);
 }
 
-void make_play(int key, WINDOW* my_win, paddle_position_t * paddle, ball_position_t * ball){
-    if (key == KEY_LEFT || key == KEY_RIGHT || key == KEY_UP || key == KEY_DOWN){
-        draw_paddle(my_win, paddle, false);
-        moove_paddle (paddle, key, ball);
-        draw_paddle(my_win, paddle, true);
-        draw_ball(my_win, ball, true);
-    }
-}

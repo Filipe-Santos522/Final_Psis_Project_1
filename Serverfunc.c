@@ -1,3 +1,7 @@
+/*PSis Project 2 - 21/22
+ * Filipe Santos - 90068
+ * Alexandre Fonseca - 90210
+ */
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -6,7 +10,7 @@
 #include "Serverfunc.h"
 #include "sock_dg_inet.h"
 
-
+//Create socket and return the descriptor with error checking
 int Socket_creation(){
     int sock_fd;
     sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -17,6 +21,7 @@ int Socket_creation(){
     return sock_fd;
 }
 
+//Bind socket with error checking
 void Socket_identification(int sock_fd){
     
     struct sockaddr_in local_addr;
@@ -31,6 +36,7 @@ void Socket_identification(int sock_fd){
     }
 }
 
+//Send message with error checking
 void Send_Reply(int sock_fd, message *reply_message, struct sockaddr_in* client_addr){
     socklen_t client_addr_size = sizeof(struct sockaddr_in);
     int nbytes = sendto(sock_fd, reply_message, sizeof(message), 0,  (struct sockaddr *) client_addr, client_addr_size);
@@ -40,6 +46,7 @@ void Send_Reply(int sock_fd, message *reply_message, struct sockaddr_in* client_
     }
 }
 
+//Receive message with error checking
 void Receive_message(int sock_fd, message *ball, struct sockaddr_in* client_addr){
     socklen_t client_addr_size = sizeof(struct sockaddr_in);
     int nbytes = recvfrom(sock_fd, ball, sizeof(*ball), 0, (struct sockaddr *) client_addr, &client_addr_size);
