@@ -81,7 +81,7 @@ void moove_paddle (paddle_position_t * paddle, int direction, ball_position_t *b
                 ball->left_ver_right = -1;
                 paddle->x--;
             }
-            else if (paddle->y != ball->y || ball->x - paddle->x <= -3)
+            else if (paddle->y != ball->y || ball->x - paddle->x < -3)
                 paddle->x--;
         }
         
@@ -95,7 +95,7 @@ void moove_paddle (paddle_position_t * paddle, int direction, ball_position_t *b
                 ball->left_ver_right = 1;
                 paddle->x++;
             }
-            else if (paddle->y != ball->y || ball->x - paddle->x >= 3)
+            else if (paddle->y != ball->y || ball->x - paddle->x > 3)
                 paddle->x++;
         }
     }

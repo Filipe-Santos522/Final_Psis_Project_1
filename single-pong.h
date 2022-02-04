@@ -29,4 +29,3 @@ void moove_paddle (paddle_position_t * paddle, int direction, ball_position_t  *
 void place_ball_random(ball_position_t * ball);
 void moove_ball(ball_position_t * ball, paddle_position_t paddle);
 void draw_ball(WINDOW *win, ball_position_t * ball, int draw);
-void make_play(int key, WINDOW* my_win, paddle_position_t * paddle, ball_position_t * ball);
